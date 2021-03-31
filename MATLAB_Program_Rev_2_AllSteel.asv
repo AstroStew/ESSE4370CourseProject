@@ -71,8 +71,8 @@ A=0.008*0.004; %m
 
 
 
-Alum_E=69e09;
-Steel_E=200e+09;
+Alum_E=69e09; %Pascals
+Steel_E=200e+09; %Pascals
 
 % Element 1 (between Node 1 and 2
 Length_1=1; %m
@@ -96,24 +96,24 @@ Node_connect_3=[3,4];
 %Element 4 (between Node 1 and 5)
 Length_4=1;
 Angle_4=deg2rad(90); %Covnerts -180 degrees to radians
-E_4=Alum_E;
+E_4=Steel_E;
 Node_connect_4=[1,5];
 
 %Element 5(between Node 2 and 5)
 Length_5=sqrt(2); %comes from sqrt(1^2+1^2)
-Angle_5=deg2rad(-45); % Converts degs to radians
+Angle_5=deg2rad(135); % Converts degs to radians
 E_5=Steel_E;
 Node_connect_5=[2,5];
 
 %Element 6 (between Node 2 and 6)
 Length_6=1;
 Angle_6=deg2rad(90);
-E_6=Alum_E;
+E_6=Steel_E;
 Node_connect_6=[2,6];
 
 %Element 7 (between 3 and 6)
 Length_7=sqrt(2);
-Angle_7=deg2rad(-45);
+Angle_7=deg2rad(135);
 E_7=Steel_E;
 Node_connect_7=[3,6];
 
@@ -121,48 +121,48 @@ Node_connect_7=[3,6];
 %Element 8 (between Node 2 and 7)
 Length_8=1;
 Angle_8=deg2rad(90);
-E_8=Alum_E;
-Node_connect_8=[2,7];
+E_8=Steel_E;
+Node_connect_8=[3,7];
 
 %Element 9(between 4 and 7)
 Length_9=sqrt(2);
-Angle_9=deg2rad(-45);
+Angle_9=deg2rad(135);
 E_9=Steel_E;
 Node_connect_9=[4,7];
 
 %Element 10(between 5 and 6)
 Length_10=1;
 Angle_10=0;
-E_10=Alum_E;
+E_10=Steel_E;
 Node_connect_10=[5,6];
 
 %Element 11(between 6 and 7)
 Length_11=1;
 Angle_11=0;
-E_11=Alum_E;
+E_11=Steel_E;
 Node_connect_11=[6,7];
 
 %Element 12(between 5 and 8)
 Length_12=1;
 Angle_12=deg2rad(90);
-E_12=Alum_E;
+E_12=Steel_E;
 Node_connect_12=[5,8];
 
 %Element 13(between 6 and 8)
 Length_13=sqrt(2);
-Angle_13=deg2rad(-45);
+Angle_13=deg2rad(135);
 E_13=Steel_E;
 Node_connect_13=[6,8];
 
 %Element 14(between 6 and 9)
 Length_14=1;
 Angle_14=deg2rad(90);
-E_14=Alum_E;
+E_14=Steel_E;
 Node_connect_14=[6,9];
 
 %Element 15(between 7 and 9)
 Length_15=sqrt(2);
-Angle_15=deg2rad(-45);
+Angle_15=deg2rad(135);
 E_15=Steel_E;
 Node_connect_15=[7,9];
 
@@ -170,23 +170,23 @@ Node_connect_15=[7,9];
 %Element 16(between 8 and 9)
 Length_16=1;
 Angle_16=deg2rad(0);
-E_16=Alum_E;
+E_16=Steel_E;
 Node_connect_16=[8,9];
 
 %Element 17 (between 8 and 10)
 Length_17=1;
 Angle_17=deg2rad(90);
-E_17=Alum_E;
+E_17=Steel_E;
 Node_connect_17=[8,10];
 
 %Element 18(Node betwen 9 to 10)
 Length_18=sqrt(2);
-Angle_18=deg2rad(-45);
+Angle_18=deg2rad(135);
 E_18=Steel_E;
 Node_connect_18=[9,10];
 
 
-%HardCoded Arrays. To be used as an Example
+%Hard Coded Arrays. To be used as an Example
 
 Length_Array=[Length_1,Length_2,Length_3,Length_4,...
     Length_5,Length_6,Length_7,Length_8,Length_9,Length_10,...
@@ -310,11 +310,11 @@ end
 %Repack Displacements in x and y coordinates
 Displacements_Packed(:,1)=Total_displacements(1:2:end);
 Displacements_Packed(:,2)=Total_displacements(2:2:end);
-%this is done because 
+%this is done because it's easier to add tot he exisitng Node matrix
 
 Scale=20;
 
-Displaced_Nodes=Node_mat+Scale.*(Displacements_Packed);
+Displaced_Nodes=(Node_mat+Scale.*(Displacements_Packed));
 %Adds the existing x,y corrdinates of the element to the node displacements
 
 figure(3)
@@ -323,6 +323,12 @@ plot(3:4)=scatter(Displaced_Nodes(:,1),Displaced_Nodes(:,2),'r','filled');
 hold off;
 legend(plot([2,4]) ,{'Orginal Nodes','Displaced Nodes (Scale 20)'})
 xlabel('X Axis'); ylabel('Y Axis')
+
+%% Print Deformation and Stress
+disp('The Stress is:')
+disp(Stress)
+disp('The Displacements are:')
+
 
 %% Local Fucntions 
 

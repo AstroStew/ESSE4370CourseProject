@@ -118,11 +118,11 @@ E_7=Steel_E;
 Node_connect_7=[3,6];
 
 
-%Element 8 (between Node 2 and 7)
+%Element 8 (between Node 3 and 7)
 Length_8=1;
 Angle_8=deg2rad(90);
 E_8=Alum_E;
-Node_connect_8=[2,7];
+Node_connect_8=[3,7];
 
 %Element 9(between 4 and 7)
 Length_9=sqrt(2);
