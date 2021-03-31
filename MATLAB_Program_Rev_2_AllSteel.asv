@@ -295,12 +295,11 @@ for i =1:length(Angle_Array) %iterations through the Elements
     %Y2-Y1 Component   
 end
 %Now that we have Propagted our Global Stiffness Matrices for each Element
-    %, we can add up all the 'Slices' to get a 2D Sum-- This is our Global
-    %Stiffness Matrix!
+%, we can add up all the 'Slices' to get a 2D Sum-- This is our Global
+%Stiffness Matrix!
 GlobalStiffnessMatrix_Example=sum(Global_Stiffness_2,3);
 
-%GlobalStiffnessMatrix_Example=GlobalStiffnessMatrix(E_Array,...
- %   A_Array,Length_Array,Angle_Array,Interconnect_mat);
+
 
 
 %% Applying Boundary Conditions
@@ -360,7 +359,8 @@ end
 %% Calculate Stress of Each Element
 for i=1:length(Length_Array)
     
-    StressAngleArray=[-cos(Angle_Array(i)),-sin(Angle_Array(i)),cos(Angle_Array(i)),sin(Angle_Array(i))];
+    StressAngleArray=[-cos(Angle_Array(i)),-sin(Angle_Array(i)),cos...
+        (Angle_Array(i)),sin(Angle_Array(i))];
     X_1=Interconnect_mat(i,1)*2-1; X_2=Interconnect_mat(i,2)*2-1; %indexs
     Y_1=Interconnect_mat(i,1)*2; Y_2=Interconnect_mat(i,2)*2; 
     %Using the Node Numbers mentioned in the interconnectiveness matrix, we
@@ -368,7 +368,8 @@ for i=1:length(Length_Array)
     
     Element_displacement=[Total_displacements(X_1);Total_displacements(Y_1);...
         Total_displacements(X_2);Total_displacements(Y_2)];
-    Stress(i)=(StressAngleArray*Element_displacement)*E_Array(i)/Length_Array(i); %Produces Stresses of the Elements
+    Stress(i)=(StressAngleArray*Element_displacement)*E_Array(i)/Length_Array(i); 
+    %Produces Stresses of the Elements
     %Using the Angle Array we can multiply it by the displacements
 end
 
@@ -394,6 +395,7 @@ legend(plot([2,4]) ,{'Orginal Nodes','Displaced Nodes (Scale 20)'})
 xlabel('X Axis'); ylabel('Y Axis')
 
 % Print Deformation and Stress
+
 disp('The Element Stress is (Pa):')
 disp(transpose(Stress))
 disp('The Nodal Displacements are (m)[x,y]:')
@@ -421,4 +423,4 @@ output=transpose(Tranform_Matrix)*...
 end
 
 
-%
+%%% End of Program %%%  

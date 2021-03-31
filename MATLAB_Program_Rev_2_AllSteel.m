@@ -359,7 +359,8 @@ end
 %% Calculate Stress of Each Element
 for i=1:length(Length_Array)
     
-    StressAngleArray=[-cos(Angle_Array(i)),-sin(Angle_Array(i)),cos(Angle_Array(i)),sin(Angle_Array(i))];
+    StressAngleArray=[-cos(Angle_Array(i)),-sin(Angle_Array(i)),...
+        cos(Angle_Array(i)),sin(Angle_Array(i))];
     X_1=Interconnect_mat(i,1)*2-1; X_2=Interconnect_mat(i,2)*2-1; %indexs
     Y_1=Interconnect_mat(i,1)*2; Y_2=Interconnect_mat(i,2)*2; 
     %Using the Node Numbers mentioned in the interconnectiveness matrix, we
@@ -367,7 +368,8 @@ for i=1:length(Length_Array)
     
     Element_displacement=[Total_displacements(X_1);Total_displacements(Y_1);...
         Total_displacements(X_2);Total_displacements(Y_2)];
-    Stress(i)=(StressAngleArray*Element_displacement)*E_Array(i)/Length_Array(i); %Produces Stresses of the Elements
+    Stress(i)=(StressAngleArray*Element_displacement)*E_Array(i)/Length_Array(i); 
+    %Produces Stresses of the Elements
     %Using the Angle Array we can multiply it by the displacements
 end
 
@@ -393,6 +395,8 @@ legend(plot([2,4]) ,{'Orginal Nodes','Displaced Nodes (Scale 20)'})
 xlabel('X Axis'); ylabel('Y Axis')
 
 % Print Deformation and Stress
+disp('Reaction Forces(N):')
+disp (transpose(ReactionForce_total))
 disp('The Element Stress is (Pa):')
 disp(transpose(Stress))
 disp('The Nodal Displacements are (m)[x,y]:')
