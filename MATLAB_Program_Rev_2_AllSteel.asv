@@ -53,7 +53,7 @@ figure(1);
 
 plot(x,y,'r',x2,y2,'b',x3,2*y2,'b',2*y2,x3,'b',y2,x2,'b',x3,y4,'r',x2,y5,'r',zeros(1,length(x)),x,'b',x,zeros(1,length(x)),'r')
 title('Visual Representation of Structure');
-legend('Steel Beams','Aluminum Beams');
+legend('Steel Beams','Proposed Aluminum Beams');
 xlabel('X Axis (m)'); ylabel('Y Axis (m)');
 
 % Cross Sectional Area
@@ -198,145 +198,28 @@ Angle_Array=[Angle_1,Angle_2,Angle_3,Angle_4,Angle_5,Angle_6,...
     Angle_7,Angle_8,Angle_9,Angle_10,Angle_11,Angle_12,Angle_13,Angle_14...
     ,Angle_15,Angle_16,Angle_17,Angle_18];
 
+Num_of_elements=length(Length_Array);
+A_Array=A.*ones(1,Num_of_elements); %Since all the Cross Sectional Areas are the same
+
 Interconnect_mat=[Node_connect_1;Node_connect_2;Node_connect_3;...
     Node_connect_4;Node_connect_5;Node_connect_6;Node_connect_7;...
     Node_connect_8;Node_connect_9;Node_connect_10;Node_connect_11;...
     Node_connect_12;Node_connect_13;Node_connect_14;Node_connect_15;...
     Node_connect_16;Node_connect_17;Node_connect_18];
 
-Num_of_elements=length(Length_Array);
 
-A_Array=A.*ones(1,Num_of_elements); %Since all the Cross Sectional Areas are the same
+
+
 
 Node_mat=[0,0;1,0;2,0;3,0;0,1;1,1;2,1;0,2;1,2;0,3]; %Creates the Node Matrix
 
-BC_mat=[1,1;0,0;0,0;0,0;1,1;0,0;0,0;1,1;0,0;1,1]; %Each Row Corresponds to the Node
-%1st Column is x and %2nd column is y
+BC_Vector=[1,1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,1,1]; %Boundary Conditon Boolean Vector
 
-Forces=[0,0,0,-3000,0,-3000,0,-3000,0,0,0,0,0,0,0,0,0,0,0,0];
+GlobalForceVector=[0,0,0,-3000,0,-3000,0,-3000,0,0,0,0,0,0,0,0,0,0,0,0]; %Global Force Vector 
 
 %% Generation of Global Stiffness Matrix
 
-%This Section of the 
-GlobalStiffnessMatrix_Example=GlobalStiffnessMatrix(E_Array,...
-    A_Array,Length_Array,Angle_Array,Interconnect_mat);
-
-
-%% Applying Boundary Conditions
-
-%Step one: Unpack BC Mat and deletes rows and columns 
-
-%unpacking Boundary Condition Matrix
-index=1;
-for k=1:length(BC_mat)
-    BC_Unpacked(index)=BC_mat(k,1);
-    index=index+1;
-    BC_Unpacked(index)=BC_mat(k,2);
-    index=index+1;  
-end
-
-
-
-%Applying BC's
-
-%Applying BC to Global Stiffness Matrix
-List_Non_zeros=find(BC_Unpacked); % Finds the indexes of the Boundary Conditions
-%finds the indexs of Boundary Conditons
-
-BC_GSM=GlobalStiffnessMatrix_Example;
-
-BC_GSM([List_Non_zeros],:)=[];
-BC_GSM(:,[List_Non_zeros])=[];
-%deletes the rows and columns that have Boundary Conditions
-
-%Applying BC to Forces Vector
-BC_Forces=Forces;
-BC_Forces([List_Non_zeros])=[];
-%Deletes Froces Values which have bounary conditions
-
-%% Solve for Displacements
-
-Displacements=inv(BC_GSM)*(transpose(BC_Forces));
-%This gives the Displacements in meters
-
-%% Solve for Reaction Forces
-List_zeros=find(~BC_Unpacked); %Finds index of Zeros in BC Unpacked Array
-
-
-RF_GSM=GlobalStiffnessMatrix_Example;
-RF_GSM(:,[List_Non_zeros])=[]; %Deletes Columns with ones (that have boundary conditons)
-RF_GSM([List_zeros],:)=[]; %Deletes Rows with Zeros (that are not boundary conditioned)
-
-Reaction_force=(RF_GSM)*(Displacements);
-
-
-%% Create Full Arrays of the the Reaction and Displacements for each Node
-
-%This Section populates the Reaction and Displacement array so that they
-%have a value of 0 when they are not considered in the above calculations
-index=1;
-index2=1;
-
-for i=1:length(BC_Unpacked)
-    if (BC_Unpacked(i)==1)
-        Total_displacements(i)=0;
-        ReactionForce_total(i)=Reaction_force(index2);
-        index2=index2+1;
-    else
-        Total_displacements(i)=Displacements(index);
-        index=index+1;
-    end
-end
-
-
-%% Calculate Stress of Each Element
-for i=1:length(Length_Array)
-    
-    StressAngleArray=[-cos(Angle_Array(i)),-sin(Angle_Array(i)),cos(Angle_Array(i)),sin(Angle_Array(i))];
-    X_1=Interconnect_mat(i,1)*2-1; X_2=Interconnect_mat(i,2)*2-1; %indexs
-    Y_1=Interconnect_mat(i,1)*2; Y_2=Interconnect_mat(i,2)*2; 
-    %Using the Node Numbers mentioned in the interconnectiveness matrix, we
-    %come up with indexes to be accessed for each element
-    
-    Element_displacement=[Total_displacements(X_1);Total_displacements(Y_1);...
-        Total_displacements(X_2);Total_displacements(Y_2)];
-    Stress(i)=(StressAngleArray*Element_displacement)*E_Array(i)/Length_Array(i); %Produces Stresses of the Elements
-    %Using the Angle Array we can multiply it by the displacements
-end
-
-%% Plot Deformed and Undeformed Nodes
-
-
-%Repack Displacements in x and y coordinates
-Displacements_Packed(:,1)=Total_displacements(1:2:end);
-Displacements_Packed(:,2)=Total_displacements(2:2:end);
-%this is done because it's easier to add tot he exisitng Node matrix
-
-Scale=20;
-
-Displaced_Nodes=(Node_mat+Scale.*(Displacements_Packed));
-%Adds the existing x,y corrdinates of the element to the node displacements
-
-figure(3)
-plot(1:2)=scatter(Node_mat(:,1),Node_mat(:,2),'filled','b');hold on
-plot(3:4)=scatter(Displaced_Nodes(:,1),Displaced_Nodes(:,2),'r','filled');
-hold off;
-legend(plot([2,4]) ,{'Orginal Nodes','Displaced Nodes (Scale 20)'})
-xlabel('X Axis'); ylabel('Y Axis')
-
-%% Print Deformation and Stress
-disp('The Stress is:')
-disp(Stress)
-disp('The Displacements are:')
-
-
-%% Local Fucntions 
-
-
-function [output]=GlobalStiffnessMatrix(E_Array,A_Array,Length_Array,Angle_Array,Interconnect_mat)
-%Takes in the E,A,L,Angle and Interconnection Matrix to Create the Global Stiffness Matrix
-
-
+%This Section of the Program created the Global Stiffness Matrix
 
 Zeros_mat=zeros((max(max(Interconnect_mat)))*2,(max(max(Interconnect_mat)))*2,length(Angle_Array));
 %Takes the Maximum Node Value in the Interconnection Matrix and Multiplies
@@ -349,24 +232,10 @@ Zeros_mat=zeros((max(max(Interconnect_mat)))*2,(max(max(Interconnect_mat)))*2,le
 
 Global_Stiffness_2=Zeros_mat;
 
-%Matrix for Elemental Stiffness Matrix
-mat=[1,0,-1,0;0,0,0,0;-1,0,1,0;0,0,0,0]; 
-
 for i =1:length(Angle_Array) %iterations through the Elements 
     
-    %First Step is to Calculate the Elemental Stiffness Matrix
-    E_Stiffness_mat(:,:,i)=mat*E_Array(i)*A_Array(i)/Length_Array(i);
+    Global_Stiffness_1(:,:,i)=ElementStiffnessMatrixGlobal(E_Array(i),A_Array(i),Length_Array(i),Angle_Array(i));
     % Each 'Slice' is the Elements Stiffness Matrix
-    
-    %Second Step is to Calculate the Transformation Matrix of Each Elemnet
-    Tranform_Matrix(:,:,i)=[cos(Angle_Array(i)),sin(Angle_Array(i)),0,0;sin(Angle_Array(i)),cos(Angle_Array(i)),0,0;...
-     0,0,cos(Angle_Array(i)),sin(Angle_Array(i));0,0,sin(Angle_Array(i)),cos(Angle_Array(i))];
-    %Each 'Slice' Represents the Element's Transformation Matrix
-    
-    %This Global Stiffness Matrix represents the Values of Each Element
-    %which have not been added together.
-    Global_Stiffness_1(:,:,i)=transpose(Tranform_Matrix(:,:,i))*...
-        E_Stiffness_mat(:,:,i)*Tranform_Matrix(:,:,i);
     
     %The Next Part is to Move the Values found in Global Stiffness_1 into a
     %big 2D array, one that could easily be added together to get the
@@ -427,9 +296,129 @@ for i =1:length(Angle_Array) %iterations through the Elements
 end
 %Now that we have Propagted our Global Stiffness Matrices for each Element
     %, we can add up all the 'Slices' to get a 2D Sum-- This is our Global
-    %Stiffness Matrix
-output=sum(Global_Stiffness_2,3);
- 
-end 
+    %Stiffness Matrix!
+GlobalStiffnessMatrix_Example=sum(Global_Stiffness_2,3);
+
+%GlobalStiffnessMatrix_Example=GlobalStiffnessMatrix(E_Array,...
+ %   A_Array,Length_Array,Angle_Array,Interconnect_mat);
+
+
+%% Applying Boundary Conditions
+
+%Applying BC's
+
+%Applying BC to Global Stiffness Matrix
+List_Non_zeros=find(BC_Vector); % Finds the indexes of the Boundary Conditions
+%finds the indexs of Boundary Conditons
+
+BC_GSM=GlobalStiffnessMatrix_Example;
+
+BC_GSM([List_Non_zeros],:)=[];
+BC_GSM(:,[List_Non_zeros])=[];
+%deletes the rows and columns that have Boundary Conditions
+
+%Applying BC to Forces Vector
+BC_Forces=GlobalForceVector;
+BC_Forces([List_Non_zeros])=[];
+%Deletes Froces Values which have bounary conditions
+
+%% Solve for Displacements
+
+Displacements=inv(BC_GSM)*(transpose(BC_Forces));
+%This gives the Displacements in meters
+
+%% Solve for Reaction Forces
+List_zeros=find(~BC_Vector); %Finds index of Zeros in BC Unpacked Array
+
+
+RF_GSM=GlobalStiffnessMatrix_Example;
+RF_GSM(:,[List_Non_zeros])=[]; %Deletes Columns with ones (that have boundary conditons)
+RF_GSM([List_zeros],:)=[]; %Deletes Rows with Zeros (that are not boundary conditioned)
+
+Reaction_force=(RF_GSM)*(Displacements);
+
+
+%% Create Full Arrays of the Reaction Forces and Displacements for each Node
+
+%This Section populates the Reaction and Displacement array so that they
+%have a value of 0 when they are not considered in the above calculations
+index=1;
+index2=1;
+
+for i=1:length(BC_Vector)
+    if (BC_Vector(i)==1)
+        Total_displacements(i)=0;
+        ReactionForce_total(i)=Reaction_force(index2);
+        index2=index2+1;
+    else
+        Total_displacements(i)=Displacements(index);
+        index=index+1;
+    end
+end
+
+
+%% Calculate Stress of Each Element
+for i=1:length(Length_Array)
+    
+    StressAngleArray=[-cos(Angle_Array(i)),-sin(Angle_Array(i)),cos(Angle_Array(i)),sin(Angle_Array(i))];
+    X_1=Interconnect_mat(i,1)*2-1; X_2=Interconnect_mat(i,2)*2-1; %indexs
+    Y_1=Interconnect_mat(i,1)*2; Y_2=Interconnect_mat(i,2)*2; 
+    %Using the Node Numbers mentioned in the interconnectiveness matrix, we
+    %come up with indexes to be accessed for each element
+    
+    Element_displacement=[Total_displacements(X_1);Total_displacements(Y_1);...
+        Total_displacements(X_2);Total_displacements(Y_2)];
+    Stress(i)=(StressAngleArray*Element_displacement)*E_Array(i)/Length_Array(i); %Produces Stresses of the Elements
+    %Using the Angle Array we can multiply it by the displacements
+end
+
+%% Output/Display Section
+%Plot Deformed and Undeformed Nodes
+
+
+%Repack Displacements in x and y coordinates
+Displacements_Packed(:,1)=Total_displacements(1:2:end);
+Displacements_Packed(:,2)=Total_displacements(2:2:end);
+%this is done because it's easier to add to the exisitng Node matrix
+
+Scale=20;
+
+Displaced_Nodes=(Node_mat+Scale.*(Displacements_Packed));
+%Adds the existing x,y corrdinates of the element to the node displacements
+
+figure(3)
+plot(1:2)=scatter(Node_mat(:,1),Node_mat(:,2),'filled','b');hold on
+plot(3:4)=scatter(Displaced_Nodes(:,1),Displaced_Nodes(:,2),'r','filled');
+hold off;
+legend(plot([2,4]) ,{'Orginal Nodes','Displaced Nodes (Scale 20)'})
+xlabel('X Axis'); ylabel('Y Axis')
+
+% Print Deformation and Stress
+disp('The Element Stress is (Pa):')
+disp(transpose(Stress))
+disp('The Nodal Displacements are (m)[x,y]:')
+disp(Displacements_Packed)
+
+%% Local Function
+function [output]= ElementStiffnessMatrixGlobal(E,A,L,Angle)
+
+%First Step is to Calculate the Elemental Stiffness Matrix
+
+%Matrix for Elemental Stiffness Matrix
+mat=[1,0,-1,0;0,0,0,0;-1,0,1,0;0,0,0,0];
+E_Stiffness_mat=mat*E*A/L;
+%Second Step is to Calculate the Transformation Matrix of Each Elemnet
+Tranform_Matrix=[cos(Angle),sin(Angle),0,0;sin(Angle),cos(Angle),0,0;...
+     0,0,cos(Angle),sin(Angle);0,0,sin(Angle),cos(Angle)];
+    %Each 'Slice' Represents the Element's Transformation Matrix
+    
+    %This Global Stiffness Matrix represents the Values of Each Element
+    %which have not been added together.
+output=transpose(Tranform_Matrix)*...
+        E_Stiffness_mat*Tranform_Matrix;
+
+
+end
+
 
 %

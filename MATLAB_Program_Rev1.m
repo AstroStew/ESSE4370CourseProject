@@ -217,11 +217,85 @@ Forces=[0,0,0,-3000,0,-3000,0,-3000,0,0,0,0,0,0,0,0,0,0,0,0];
 
 %% Generation of Global Stiffness Matrix
 
-%This Section of the 
-GlobalStiffnessMatrix_Example=GlobalStiffnessMatrix(E_Array,...
-    A_Array,Length_Array,Angle_Array,Interconnect_mat);
+%This Section of the Program created the Global Stiffness Matrix
+
+Zeros_mat=zeros((max(max(Interconnect_mat)))*2,(max(max(Interconnect_mat)))*2,length(Angle_Array));
+%Takes the Maximum Node Value in the Interconnection Matrix and Multiplies
+%it by 2
+
+% In our Example the Zero Matrix is a 20 by 20 by 18
+%This is because we need to represent X values, Y values in 10 Nodes with
+%18 Elements
 
 
+Global_Stiffness_2=Zeros_mat;
+
+for i =1:length(Angle_Array) %iterations through the Elements 
+    
+    Global_Stiffness_1(:,:,i)=ElementStiffnessMatrixGlobal(E_Array(i),A_Array(i),Length_Array(i),Angle_Array(i));
+    % Each 'Slice' is the Elements Stiffness Matrix
+    
+    %The Next Part is to Move the Values found in Global Stiffness_1 into a
+    %big 2D array, one that could easily be added together to get the
+    %global matrix
+    
+    
+    %We must define our indexes of the X(i,1)-X(i,1) Values:
+    Index_1=Interconnect_mat(i,1)*2-1; Index_2=Interconnect_mat(i,2)*2-1;
+    %These index values use the attached nodel numbers.
+    %in our example our Zeroes Matrix is 20 by 20 by 18 since we have 10
+    %Nodes with X and Y values for the Nodes and 18 Elements. The Index
+    %values use the Node's number multiplies it by 2 and subtracts 1 to
+    %represent the Global Stiffness Matrix's Index Value in 2D
+    
+        
+    %We now assign the Global Stiffness Matrix values to the proper indices
+    
+    %Qudrant 2 (Top Left):
+    
+    Global_Stiffness_2(Index_1,Index_1,i)=Global_Stiffness_1(1,1,i);
+    %X1-X1 Component
+    Global_Stiffness_2(Index_1+1,Index_1,i)=Global_Stiffness_1(2,1,i);
+    %X1-Y1 Component
+    Global_Stiffness_2(Index_1,Index_1+1,i)=Global_Stiffness_1(1,2,i);
+    %Y1-X1 Component
+    Global_Stiffness_2(Index_1+1,Index_1+1,i)=Global_Stiffness_1(2,2,i);
+    %Y1-Y1 Component
+    
+    %Quadrant 4 (Bottom Right)
+    Global_Stiffness_2(Index_2,Index_2,i)=Global_Stiffness_1(3,3,i);
+    %X2-X2 Component
+    Global_Stiffness_2(Index_2+1,Index_2,i)=Global_Stiffness_1(4,3,i);
+    %X2-Y2 Component
+    Global_Stiffness_2(Index_2,Index_2+1,i)=Global_Stiffness_1(3,4,i);
+    %Y2-X2 Component
+    Global_Stiffness_2(Index_2+1,Index_2+1,i)=Global_Stiffness_1(4,4,i);
+    %Y2-Y2 Component
+    
+    %Quadrant 3 (Bottom Left)
+    Global_Stiffness_2(Index_1,Index_2,i)=Global_Stiffness_1(1,3,i);
+    %X1-X2 Component
+    Global_Stiffness_2(Index_1+1,Index_2,i)=Global_Stiffness_1(2,3,i);
+    %X1-Y2 Component
+    Global_Stiffness_2(Index_1,Index_2+1,i)=Global_Stiffness_1(1,4,i);
+    %Y1-X2 Component
+    Global_Stiffness_2(Index_1+1,Index_2+1,i)=Global_Stiffness_1(2,4,i);
+    %Y1-Y2 Component
+    
+    %Quadrant 1 (Top Right)
+    Global_Stiffness_2(Index_2,Index_1,i)=Global_Stiffness_1(3,1,i);
+    %X2-X1 Component
+    Global_Stiffness_2(Index_2,Index_1+1,i)=Global_Stiffness_1(3,2,i);
+    %X2-Y1 Component
+    Global_Stiffness_2(Index_2+1,Index_1,i)=Global_Stiffness_1(4,1,i);
+    %Y2-X1 Component
+    Global_Stiffness_2(Index_2+1,Index_1+1,i)=Global_Stiffness_1(4,2,i);
+    %Y2-Y1 Component   
+end
+%Now that we have Propagted our Global Stiffness Matrices for each Element
+%, we can add up all the 'Slices' to get a 2D Sum-- This is our Global
+%Stiffness Matrix!
+GlobalStiffnessMatrix_Example=sum(Global_Stiffness_2,3);
 %% Applying Boundary Conditions
 
 %Step one: Unpack BC Mat and deletes rows and columns 
@@ -324,109 +398,23 @@ hold off;
 legend(plot([2,4]) ,{'Orginal Nodes','Displaced Nodes (Scale 20)'})
 xlabel('X Axis'); ylabel('Y Axis')
 
-%% Local Fucntions 
+%% Local Function
+function [output]= ElementStiffnessMatrixGlobal(E,A,L,Angle)
 
-
-function [output]=GlobalStiffnessMatrix(E_Array,A_Array,Length_Array,Angle_Array,Interconnect_mat)
-%Takes in the E,A,L,Angle and Interconnection Matrix to Create the Global Stiffness Matrix
-
-
-
-Zeros_mat=zeros((max(max(Interconnect_mat)))*2,(max(max(Interconnect_mat)))*2,length(Angle_Array));
-%Takes the Maximum Node Value in the Interconnection Matrix and Multiplies
-%it by 2
-
-% In our Example the Zero Matrix is a 20 by 20 by 18
-%This is because we need to represent X values, Y values in 10 Nodes with
-%18 Elements
-
-
-Global_Stiffness_2=Zeros_mat;
+%First Step is to Calculate the Elemental Stiffness Matrix
 
 %Matrix for Elemental Stiffness Matrix
-mat=[1,0,-1,0;0,0,0,0;-1,0,1,0;0,0,0,0]; 
-
-for i =1:length(Angle_Array) %iterations through the Elements 
-    
-    %First Step is to Calculate the Elemental Stiffness Matrix
-    E_Stiffness_mat(:,:,i)=mat*E_Array(i)*A_Array(i)/Length_Array(i);
-    % Each 'Slice' is the Elements Stiffness Matrix
-    
-    %Second Step is to Calculate the Transformation Matrix of Each Elemnet
-    Tranform_Matrix(:,:,i)=[cos(Angle_Array(i)),sin(Angle_Array(i)),0,0;sin(Angle_Array(i)),cos(Angle_Array(i)),0,0;...
-     0,0,cos(Angle_Array(i)),sin(Angle_Array(i));0,0,sin(Angle_Array(i)),cos(Angle_Array(i))];
+mat=[1,0,-1,0;0,0,0,0;-1,0,1,0;0,0,0,0];
+E_Stiffness_mat=mat*E*A/L;
+%Second Step is to Calculate the Transformation Matrix of Each Elemnet
+Tranform_Matrix=[cos(Angle),sin(Angle),0,0;sin(Angle),cos(Angle),0,0;...
+     0,0,cos(Angle),sin(Angle);0,0,sin(Angle),cos(Angle)];
     %Each 'Slice' Represents the Element's Transformation Matrix
     
     %This Global Stiffness Matrix represents the Values of Each Element
     %which have not been added together.
-    Global_Stiffness_1(:,:,i)=transpose(Tranform_Matrix(:,:,i))*...
-        E_Stiffness_mat(:,:,i)*Tranform_Matrix(:,:,i);
-    
-    %The Next Part is to Move the Values found in Global Stiffness_1 into a
-    %big 2D array, one that could easily be added together to get the
-    %global matrix
-    
-    
-    %We must define our indexes of the X(i,1)-X(i,1) Values:
-    Index_1=Interconnect_mat(i,1)*2-1; Index_2=Interconnect_mat(i,2)*2-1;
-    %These index values use the attached nodel numbers.
-    %in our example our Zeroes Matrix is 20 by 20 by 18 since we have 10
-    %Nodes with X and Y values for the Nodes and 18 Elements. The Index
-    %values use the Node's number multiplies it by 2 and subtracts 1 to
-    %represent the Global Stiffness Matrix's Index Value in 2D
-    
-        
-    %We now assign the Global Stiffness Matrix values to the proper indices
-    
-    %Qudrant 2 (Top Left):
-    
-    Global_Stiffness_2(Index_1,Index_1,i)=Global_Stiffness_1(1,1,i);
-    %X1-X1 Component
-    Global_Stiffness_2(Index_1+1,Index_1,i)=Global_Stiffness_1(2,1,i);
-    %X1-Y1 Component
-    Global_Stiffness_2(Index_1,Index_1+1,i)=Global_Stiffness_1(1,2,i);
-    %Y1-X1 Component
-    Global_Stiffness_2(Index_1+1,Index_1+1,i)=Global_Stiffness_1(2,2,i);
-    %Y1-Y1 Component
-    
-    %Quadrant 4 (Bottom Right)
-    Global_Stiffness_2(Index_2,Index_2,i)=Global_Stiffness_1(3,3,i);
-    %X2-X2 Component
-    Global_Stiffness_2(Index_2+1,Index_2,i)=Global_Stiffness_1(4,3,i);
-    %X2-Y2 Component
-    Global_Stiffness_2(Index_2,Index_2+1,i)=Global_Stiffness_1(3,4,i);
-    %Y2-X2 Component
-    Global_Stiffness_2(Index_2+1,Index_2+1,i)=Global_Stiffness_1(4,4,i);
-    %Y2-Y2 Component
-    
-    %Quadrant 3 (Bottom Left)
-    Global_Stiffness_2(Index_1,Index_2,i)=Global_Stiffness_1(1,3,i);
-    %X1-X2 Component
-    Global_Stiffness_2(Index_1+1,Index_2,i)=Global_Stiffness_1(2,3,i);
-    %X1-Y2 Component
-    Global_Stiffness_2(Index_1,Index_2+1,i)=Global_Stiffness_1(1,4,i);
-    %Y1-X2 Component
-    Global_Stiffness_2(Index_1+1,Index_2+1,i)=Global_Stiffness_1(2,4,i);
-    %Y1-Y2 Component
-    
-    %Quadrant 1 (Top Right)
-    Global_Stiffness_2(Index_2,Index_1,i)=Global_Stiffness_1(3,1,i);
-    %X2-X1 Component
-    Global_Stiffness_2(Index_2,Index_1+1,i)=Global_Stiffness_1(3,2,i);
-    %X2-Y1 Component
-    Global_Stiffness_2(Index_2+1,Index_1,i)=Global_Stiffness_1(4,1,i);
-    %Y2-X1 Component
-    Global_Stiffness_2(Index_2+1,Index_1+1,i)=Global_Stiffness_1(4,2,i);
-    %Y2-Y1 Component
-    
-    
-    
-end
-%Now that we have Propagted our Global Stiffness Matrices for each Element
-    %, we can add up all the 'Slices' to get a 2D Sum-- This is our Global
-    %Stiffness Matrix
-output=sum(Global_Stiffness_2,3);
- 
-end 
+output=transpose(Tranform_Matrix)*...
+        E_Stiffness_mat*Tranform_Matrix;
 
-%
+
+end
