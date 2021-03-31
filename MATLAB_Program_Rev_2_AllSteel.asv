@@ -51,7 +51,8 @@ x2=linspace(0,2); y2=ones(1,length(x2));
 x3=linspace(0,1);y4=-x3+1; y5=-x2+2;
 figure(1);
 
-plot(x,y,'r',x2,y2,'b',x3,2*y2,'b',2*y2,x3,'b',y2,x2,'b',x3,y4,'r',x2,y5,'r',zeros(1,length(x)),x,'b',x,zeros(1,length(x)),'r')
+plot(x,y,'r',x2,y2,'b',x3,2*y2,'b',2*y2,x3,'b',y2,x2,'b',x3,y4,'r',x2,y5,...
+    'r',zeros(1,length(x)),x,'b',x,zeros(1,length(x)),'r')
 title('Visual Representation of Structure');
 legend('Steel Beams','Proposed Aluminum Beams');
 xlabel('X Axis (m)'); ylabel('Y Axis (m)');
@@ -190,16 +191,19 @@ Node_connect_18=[9,10];
 
 Length_Array=[Length_1,Length_2,Length_3,Length_4,...
     Length_5,Length_6,Length_7,Length_8,Length_9,Length_10,...
-    Length_11,Length_12,Length_13,Length_14,Length_15,Length_16,Length_17,Length_18];
+    Length_11,Length_12,Length_13,Length_14,Length_15,Length_16,Length_17,...
+    Length_18];
 
-E_Array=[E_1,E_2,E_3,E_4,E_5,E_6,E_7,E_8,E_9,E_10,E_11,E_12,E_13,E_14,E_15,E_16,E_17,E_18];
+E_Array=[E_1,E_2,E_3,E_4,E_5,E_6,E_7,E_8,E_9,E_10,E_11,E_12,...
+    E_13,E_14,E_15,E_16,E_17,E_18];
 
 Angle_Array=[Angle_1,Angle_2,Angle_3,Angle_4,Angle_5,Angle_6,...
     Angle_7,Angle_8,Angle_9,Angle_10,Angle_11,Angle_12,Angle_13,Angle_14...
     ,Angle_15,Angle_16,Angle_17,Angle_18];
 
 Num_of_elements=length(Length_Array);
-A_Array=A.*ones(1,Num_of_elements); %Since all the Cross Sectional Areas are the same
+A_Array=A.*ones(1,Num_of_elements); 
+%Since all the Cross Sectional Areas are the same
 
 Interconnect_mat=[Node_connect_1;Node_connect_2;Node_connect_3;...
     Node_connect_4;Node_connect_5;Node_connect_6;Node_connect_7;...
@@ -211,17 +215,21 @@ Interconnect_mat=[Node_connect_1;Node_connect_2;Node_connect_3;...
 
 
 
-Node_mat=[0,0;1,0;2,0;3,0;0,1;1,1;2,1;0,2;1,2;0,3]; %Creates the Node Matrix
+Node_mat=[0,0;1,0;2,0;3,0;0,1;1,1;2,1;0,2;1,2;0,3]; 
+%Creates the Node Matrix
 
-BC_Vector=[1,1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,1,1]; %Boundary Conditon Boolean Vector
+BC_Vector=[1,1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,1,1];
+%Boundary Conditon Boolean Vector
 
-GlobalForceVector=[0,0,0,-3000,0,-3000,0,-3000,0,0,0,0,0,0,0,0,0,0,0,0]; %Global Force Vector 
+GlobalForceVector=[0,0,0,-3000,0,-3000,0,-3000,0,0,0,0,0,0,0,0,0,0,0,0]; 
+%Global Force Vector 
 
 %% Generation of Global Stiffness Matrix
 
 %This Section of the Program created the Global Stiffness Matrix
 
-Zeros_mat=zeros((max(max(Interconnect_mat)))*2,(max(max(Interconnect_mat)))*2,length(Angle_Array));
+Zeros_mat=zeros((max(max(Interconnect_mat)))*2,...
+    (max(max(Interconnect_mat)))*2,length(Angle_Array));
 %Takes the Maximum Node Value in the Interconnection Matrix and Multiplies
 %it by 2
 
@@ -234,7 +242,8 @@ Global_Stiffness_2=Zeros_mat;
 
 for i =1:length(Angle_Array) %iterations through the Elements 
     
-    Global_Stiffness_1(:,:,i)=ElementStiffnessMatrixGlobal(E_Array(i),A_Array(i),Length_Array(i),Angle_Array(i));
+    Global_Stiffness_1(:,:,i)=ElementStiffnessMatrixGlobal(E_Array(i),...
+        A_Array(i),Length_Array(i),Angle_Array(i));
     % Each 'Slice' is the Elements Stiffness Matrix
     
     %The Next Part is to Move the Values found in Global Stiffness_1 into a
@@ -307,7 +316,7 @@ GlobalStiffnessMatrix_Example=sum(Global_Stiffness_2,3);
 %Applying BC's
 
 %Applying BC to Global Stiffness Matrix
-List_Non_zeros=find(BC_Vector); % Finds the indexes of the Boundary Conditions
+List_Non_zeros=find(BC_Vector); 
 %finds the indexs of Boundary Conditons
 
 BC_GSM=GlobalStiffnessMatrix_Example;
@@ -359,16 +368,18 @@ end
 %% Calculate Stress of Each Element
 for i=1:length(Length_Array)
     
-    StressAngleArray=[-cos(Angle_Array(i)),-sin(Angle_Array(i)),cos...
-        (Angle_Array(i)),sin(Angle_Array(i))];
+    StressAngleArray=[-cos(Angle_Array(i)),-sin(Angle_Array(i)),...
+        cos(Angle_Array(i)),sin(Angle_Array(i))];
     X_1=Interconnect_mat(i,1)*2-1; X_2=Interconnect_mat(i,2)*2-1; %indexs
     Y_1=Interconnect_mat(i,1)*2; Y_2=Interconnect_mat(i,2)*2; 
     %Using the Node Numbers mentioned in the interconnectiveness matrix, we
     %come up with indexes to be accessed for each element
     
-    Element_displacement=[Total_displacements(X_1);Total_displacements(Y_1);...
-        Total_displacements(X_2);Total_displacements(Y_2)];
-    Stress(i)=(StressAngleArray*Element_displacement)*E_Array(i)/Length_Array(i); 
+    Element_displacement=[Total_displacements(X_1);...
+        Total_displacements(Y_1);Total_displacements(X_2);...
+        Total_displacements(Y_2)];
+    Stress(i)=(StressAngleArray*Element_displacement)*E_Array(i)/...
+        Length_Array(i); 
     %Produces Stresses of the Elements
     %Using the Angle Array we can multiply it by the displacements
 end
@@ -392,10 +403,11 @@ plot(1:2)=scatter(Node_mat(:,1),Node_mat(:,2),'filled','b');hold on
 plot(3:4)=scatter(Displaced_Nodes(:,1),Displaced_Nodes(:,2),'r','filled');
 hold off;
 legend(plot([2,4]) ,{'Orginal Nodes','Displaced Nodes (Scale 20)'})
-xlabel('X Axis'); ylabel('Y Axis')
+xlabel('X Axis'); ylabel('Y Axis'); title(")
 
 % Print Deformation and Stress
-
+disp('Reaction Forces(N):')
+disp (transpose(ReactionForce_total))
 disp('The Element Stress is (Pa):')
 disp(transpose(Stress))
 disp('The Nodal Displacements are (m)[x,y]:')
